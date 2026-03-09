@@ -313,8 +313,8 @@
     <main class="main">
       <section class="hero panel">
         <div>
-          <div class="eyebrow">按操作更新</div>
-          <h2 class="big" id="todayHours">0.00 小时</h2>
+          <div class="eyebrow">每秒刷新</div>
+          <h2 class="big" id="todayHours">0小时 0分 0秒</h2>
           <div class="subbig">支持给某一天单独设置上下班时间。未单独设置的日期，自动使用左侧默认时间。</div>
           <div class="kv">
             <div class="mini">
@@ -447,12 +447,15 @@
       const d = String(date.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
     }
+
     function addDays(dateStr, delta) {
       const d = new Date(dateStr + 'T00:00:00');
       d.setDate(d.getDate() + delta);
       return toDateString(d);
     }
+
     const todayStr = toDateString(new Date());
+
     const DEFAULTS = {
       rate: 15,
       workStart: '09:00',
@@ -535,12 +538,27 @@
       return h * 60 + m;
     }
 
-    function formatMoney(v) { return `¥${v.toFixed(2)}`; }
+    function formatMoney(v) {
+      return `¥${v.toFixed(2)}`;
+    }
+
+    function formatHMS(totalHours) {
+      const totalSeconds = Math.max(0, Math.floor(totalHours * 3600));
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      return `${h}小时 ${m}分 ${s}秒`;
+    }
 
     function formatDateTime(now) {
       return now.toLocaleString('zh-CN', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
       });
     }
 
@@ -601,6 +619,7 @@
       const bs = timeToMinutes(schedule.breakStart);
       const be = timeToMinutes(schedule.breakEnd);
       const nowM = date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+
       if (nowM <= ws) return 0;
 
       const clampedNow = Math.min(nowM, we);
@@ -635,7 +654,10 @@
     }
 
     function getFormSettings() {
-      const weekends = [...el.weekendBox.querySelectorAll('input:checked')].map(i => Number(i.value)).sort((a, b) => a - b);
+      const weekends = [...el.weekendBox.querySelectorAll('input:checked')]
+        .map(i => Number(i.value))
+        .sort((a, b) => a - b);
+
       return {
         rate: Math.max(0, Number(el.rate.value || 0)),
         workStart: el.workStart.value || DEFAULTS.workStart,
@@ -659,31 +681,41 @@
         el.dayPreview.value = '';
         return;
       }
+
       const ov = currentSettings.dailyOverrides?.[selectedDate];
       el.selectedDateText.textContent = selectedDate;
       el.selectedDateHint.textContent = ov ? '当前日期已使用单独时间' : '当前日期使用默认时间';
       el.dayWorkStart.value = ov?.workStart || currentSettings.workStart;
       el.dayWorkEnd.value = ov?.workEnd || currentSettings.workEnd;
-      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
-      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
+      const hours = calcHoursBySchedule(
+        el.dayWorkStart.value,
+        el.dayWorkEnd.value,
+        currentSettings.breakStart,
+        currentSettings.breakEnd
+      );
+      el.dayPreview.value = formatHMS(hours);
     }
 
     function renderDatePicker(cfg) {
       el.datePickerGrid.innerHTML = '';
       const range = getDateRange(cfg.periodStart, cfg.periodEnd);
+
       range.forEach(date => {
         const key = toDateString(date);
         const active = (cfg.activeDates || []).includes(key);
         const off = isOffDay(date, cfg);
         const hasOverride = !!cfg.dailyOverrides?.[key];
         const cell = document.createElement('div');
+
         cell.className = `date-cell${active ? ' active' : ''}${off ? ' muted' : ''}${selectedDate === key ? ' selected' : ''}`;
         cell.innerHTML = `${hasOverride ? '<strong>自</strong>' : ''}<span>${date.getDate()}</span>${off ? '<em>休</em>' : ''}`;
         cell.title = key;
+
         cell.addEventListener('click', () => {
           if (selectedDate === key) {
             const set = new Set(currentSettings.activeDates || []);
-            if (set.has(key)) set.delete(key); else set.add(key);
+            if (set.has(key)) set.delete(key);
+            else set.add(key);
             currentSettings.activeDates = [...set].sort();
           }
           selectedDate = key;
@@ -692,6 +724,7 @@
           refreshSelectedEditor();
           updateView(currentSettings);
         });
+
         el.datePickerGrid.appendChild(cell);
       });
     }
@@ -711,7 +744,13 @@
         const isFuture = key > todayKey;
         const isToday = key === todayKey;
         const schedule = getScheduleForDate(key, cfg);
-        const standardHoursForDay = calcHoursBySchedule(schedule.workStart, schedule.workEnd, schedule.breakStart, schedule.breakEnd);
+        const standardHoursForDay = calcHoursBySchedule(
+          schedule.workStart,
+          schedule.workEnd,
+          schedule.breakStart,
+          schedule.breakEnd
+        );
+
         let hours = 0;
         let money = 0;
 
@@ -728,7 +767,16 @@
 
         totalHours += hours;
         totalMoney += money;
-        daily.push({ key, day: d0.getDate(), active, isFuture, isToday, money, hours, hasOverride: !!cfg.dailyOverrides?.[key] });
+        daily.push({
+          key,
+          day: d0.getDate(),
+          active,
+          isFuture,
+          isToday,
+          money,
+          hours,
+          hasOverride: !!cfg.dailyOverrides?.[key]
+        });
       }
 
       return {
@@ -747,6 +795,7 @@
       const startVal = from;
       const diff = to - startVal;
       cancelAnimationFrame(animated.get(`${key}_raf`));
+
       function frame(ts) {
         const p = Math.min(1, (ts - start) / duration);
         const eased = 1 - Math.pow(1 - p, 3);
@@ -754,17 +803,23 @@
         animated.set(key, current);
         render(current);
         if (p < 1) animated.set(`${key}_raf`, requestAnimationFrame(frame));
-        else { animated.set(key, to); render(to); }
+        else {
+          animated.set(key, to);
+          render(to);
+        }
       }
+
       animated.set(`${key}_raf`, requestAnimationFrame(frame));
     }
 
     function renderBars(stats) {
       el.bars.innerHTML = '';
       const maxMoney = Math.max(...stats.daily.map(d => d.money), 1);
+
       stats.daily.forEach(item => {
         const wrap = document.createElement('div');
         wrap.className = 'bar-wrap';
+
         const bar = document.createElement('div');
         const h = item.money <= 0 ? 4 : Math.max(8, item.money / maxMoney * 220);
         bar.className = 'bar';
@@ -772,9 +827,11 @@
         if (item.isToday) bar.classList.add('today');
         bar.style.height = `${h}px`;
         bar.title = `${item.key}：${formatMoney(item.money)} / ${item.hours.toFixed(2)} 小时${item.hasOverride ? ' / 单独时间' : ''}`;
+
         const day = document.createElement('div');
         day.className = 'day';
         day.textContent = item.day;
+
         wrap.appendChild(bar);
         wrap.appendChild(day);
         el.bars.appendChild(wrap);
@@ -786,12 +843,17 @@
       const todayHours = workedMinutesAt(now, cfg) / 60;
       const todayMoney = todayHours * cfg.rate;
       const todaySchedule = getScheduleForDate(todayStr, cfg);
-      const todayStandard = calcHoursBySchedule(todaySchedule.workStart, todaySchedule.workEnd, todaySchedule.breakStart, todaySchedule.breakEnd);
+      const todayStandard = calcHoursBySchedule(
+        todaySchedule.workStart,
+        todaySchedule.workEnd,
+        todaySchedule.breakStart,
+        todaySchedule.breakEnd
+      );
       const progress = todayStandard > 0 ? Math.min(100, todayHours / todayStandard * 100) : 0;
       const stats = getPeriodStats(now, cfg);
 
       el.nowText.textContent = formatDateTime(now);
-      animateNumber('todayHours', todayHours, 500, v => el.todayHours.textContent = `${v.toFixed(2)} 小时`);
+      animateNumber('todayHours', todayHours, 500, v => el.todayHours.textContent = formatHMS(v));
       animateNumber('todayMoney', todayMoney, 500, v => el.todayMoney.textContent = formatMoney(v));
       animateNumber('todayProgress', progress, 500, v => el.todayProgress.textContent = `${v.toFixed(0)}%`);
       animateNumber('periodMoneyBig', stats.totalMoney, 620, v => el.periodMoneyBig.textContent = formatMoney(v));
@@ -810,14 +872,26 @@
     renderDatePicker(currentSettings);
     saveSettings(currentSettings);
     updateView(currentSettings);
+    setInterval(() => updateView(currentSettings), 1000);
 
     el.dayWorkStart.addEventListener('input', () => {
-      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
-      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
+      const hours = calcHoursBySchedule(
+        el.dayWorkStart.value,
+        el.dayWorkEnd.value,
+        currentSettings.breakStart,
+        currentSettings.breakEnd
+      );
+      el.dayPreview.value = formatHMS(hours);
     });
+
     el.dayWorkEnd.addEventListener('input', () => {
-      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
-      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
+      const hours = calcHoursBySchedule(
+        el.dayWorkStart.value,
+        el.dayWorkEnd.value,
+        currentSettings.breakStart,
+        currentSettings.breakEnd
+      );
+      el.dayPreview.value = formatHMS(hours);
     });
 
     el.applyDayBtn.addEventListener('click', () => {
@@ -825,19 +899,24 @@
         alert('请先选择一个日期');
         return;
       }
+
       const ws = el.dayWorkStart.value;
       const we = el.dayWorkEnd.value;
+
       if (!ws || !we) {
         alert('请先填写上班和下班时间');
         return;
       }
+
       if (timeToMinutes(we) <= timeToMinutes(ws)) {
         alert('下班时间必须晚于上班时间');
         return;
       }
+
       if (!(currentSettings.activeDates || []).includes(selectedDate)) {
         currentSettings.activeDates = [...new Set([...(currentSettings.activeDates || []), selectedDate])].sort();
       }
+
       currentSettings.dailyOverrides = currentSettings.dailyOverrides || {};
       currentSettings.dailyOverrides[selectedDate] = { workStart: ws, workEnd: we };
       saveSettings(currentSettings);
@@ -852,9 +931,11 @@
         alert('请先选择一个日期');
         return;
       }
+
       if (currentSettings.dailyOverrides?.[selectedDate]) {
         delete currentSettings.dailyOverrides[selectedDate];
       }
+
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
       updateView(currentSettings);
@@ -862,14 +943,18 @@
 
     el.saveBtn.addEventListener('click', () => {
       const next = getFormSettings();
+
       if (next.periodStart > next.periodEnd) {
         alert('结束日期不能早于开始日期');
         return;
       }
+
       currentSettings = next;
+
       if (selectedDate && (selectedDate < currentSettings.periodStart || selectedDate > currentSettings.periodEnd)) {
         selectedDate = null;
       }
+
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
       updateView(currentSettings);
