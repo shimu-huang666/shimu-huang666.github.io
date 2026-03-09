@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>今日工时</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f7f7f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #111;
+    }
+    .card {
+      width: min(92vw, 420px);
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .hours {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .money {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 18px 0 0;
+    }
+    .sub {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="label">今日已工作</div>
+    <h1 class="hours" id="hours">0.00 小时</h1>
+    <div class="money" id="money">¥0.00</div>
+    <div class="sub">09:00 开始｜12:00–13:30 午休｜时薪 ¥15</div>
+  </div>
+
+  <script>
+    const HOURLY_RATE = 15;
+
+    function getWorkedHours(now = new Date()) {
+      const start = new Date(now);
+      start.setHours(9, 0, 0, 0);
+
+      const lunchStart = new Date(now);
+      lunchStart.setHours(12, 0, 0, 0);
+
+      const lunchEnd = new Date(now);
+      lunchEnd.setHours(13, 30, 0, 0);
+
+      if (now <= start) return 0;
+
+      let workedMs = now - start;
+
+      if (now > lunchStart) {
+        const deductedUntil = now < lunchEnd ? now : lunchEnd;
+        workedMs -= deductedUntil - lunchStart;
+      }
+
+      return Math.max(0, workedMs / 1000 / 60 / 60);
+    }
+
+    function update() {
+      const now = new Date();
+      const hours = getWorkedHours(now);
+      const pay = hours * HOURLY_RATE;
+
+      document.getElementById('hours').textContent = `${hours.toFixed(2)} 小时`;
+      document.getElementById('money').textContent = `¥${pay.toFixed(2)}`;
+    }
+
+    update();
+    setInterval(update, 1000);
+  </script>
+</body>
+</html>
