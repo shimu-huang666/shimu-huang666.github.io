@@ -866,12 +866,6 @@
         alert('结束日期不能早于开始日期');
         return;
       }
-      next.activeDates = next.activeDates.filter(d => d >= next.periodStart && d <= next.periodEnd);
-      const cleanedOverrides = {};
-      Object.entries(next.dailyOverrides || {}).forEach(([k, v]) => {
-        if (k >= next.periodStart && k <= next.periodEnd) cleanedOverrides[k] = v;
-      });
-      next.dailyOverrides = cleanedOverrides;
       currentSettings = next;
       if (selectedDate && (selectedDate < currentSettings.periodStart || selectedDate > currentSettings.periodEnd)) {
         selectedDate = null;
