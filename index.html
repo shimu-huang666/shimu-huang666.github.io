@@ -114,7 +114,17 @@
       border: 1px solid var(--line);
       margin-bottom: 14px;
     }
-    .big { font-size: clamp(34px, 5vw, 62px); line-height: 1; font-weight: 800; letter-spacing: -0.05em; margin: 0 0 12px; }
+    .big {
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin: 0 0 12px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
     .subbig { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
     .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .mini {
@@ -124,7 +134,15 @@
       padding: 16px;
     }
     .mini .k { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-    .mini .v { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; }
+    .mini .v {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
     .hero-right {
       background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.7));
       border: 1px solid var(--line);
@@ -135,21 +153,53 @@
       justify-content: space-between;
       gap: 16px;
     }
-    .clock { font-size: 14px; color: var(--muted); }
-    .money-now { font-size: clamp(34px, 4vw, 54px); font-weight: 800; letter-spacing: -0.05em; margin: 6px 0 0; }
+    .clock {
+      font-size: 14px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .money-now {
+      font-size: clamp(34px, 4vw, 54px);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin: 6px 0 0;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
     .timeline { height: 12px; background: rgba(17,24,39,0.06); border-radius: 999px; overflow: hidden; }
     .timeline-bar {
       height: 100%;
       width: 0%;
       border-radius: 999px;
       background: linear-gradient(90deg, #111827, #6b7280);
-      transition: width .65s cubic-bezier(.22,1,.36,1);
+      transition: width .35s ease;
     }
-    .timeline-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .timeline-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
     .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
     .card { padding: 20px; }
     .card .k { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
-    .card .v { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 8px; }
+    .card .v {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
     .card .s { font-size: 12px; color: #9ca3af; line-height: 1.6; }
     .chart-card { padding: 22px; }
     .chart-top { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 18px; }
@@ -212,6 +262,10 @@
       background: rgba(17,24,39,0.06);
       color: #374151;
       font-size: 12px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     .tiny { font-size: 12px; color: #9ca3af; }
     .editor-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
@@ -244,6 +298,7 @@
       .cards, .grid2, .grid3, .kv, .actions, .editor-actions { grid-template-columns: 1fr; }
       .weekend { grid-template-columns: repeat(4, 1fr); }
       .cards { grid-template-columns: 1fr; }
+      .big { font-size: 40px; }
     }
   </style>
 </head>
@@ -313,9 +368,9 @@
     <main class="main">
       <section class="hero panel">
         <div>
-          <div class="eyebrow">每秒刷新</div>
-          <h2 class="big" id="todayHours">0小时 0分 0秒</h2>
-          <div class="subbig">支持给某一天单独设置上下班时间。未单独设置的日期，自动使用左侧默认时间。</div>
+          <div class="eyebrow">秒级更新</div>
+          <h2 class="big" id="todayHours">00:00:00</h2>
+          <div class="subbig">只更新实时数字，不强制重绘整页，显示更稳定。</div>
           <div class="kv">
             <div class="mini">
               <div class="k">今日收入</div>
@@ -454,6 +509,22 @@
       return toDateString(d);
     }
 
+    function pad2(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function formatClockHMS(totalHours) {
+      const totalSeconds = Math.max(0, Math.floor(totalHours * 3600));
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+    }
+
+    function formatDateTime(now) {
+      return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+    }
+
     const todayStr = toDateString(new Date());
 
     const DEFAULTS = {
@@ -503,9 +574,9 @@
       clearDayBtn: document.getElementById('clearDayBtn')
     };
 
-    const animated = new Map();
     let selectedDate = null;
     let currentSettings = loadSettings();
+    let secondTimer = null;
 
     function loadSettings() {
       try {
@@ -542,24 +613,19 @@
       return `¥${v.toFixed(2)}`;
     }
 
-    function formatHMS(totalHours) {
-      const totalSeconds = Math.max(0, Math.floor(totalHours * 3600));
-      const h = Math.floor(totalSeconds / 3600);
-      const m = Math.floor((totalSeconds % 3600) / 60);
-      const s = totalSeconds % 60;
-      return `${h}小时 ${m}分 ${s}秒`;
+    function calcHoursBySchedule(workStart, workEnd, breakStart, breakEnd) {
+      if (!workStart || !workEnd) return 0;
+      const ws = timeToMinutes(workStart);
+      const we = timeToMinutes(workEnd);
+      const bs = timeToMinutes(breakStart);
+      const be = timeToMinutes(breakEnd);
+      const total = Math.max(0, we - ws);
+      const overlap = Math.max(0, Math.min(we, be) - Math.max(ws, bs));
+      return Math.max(0, (total - overlap) / 60);
     }
 
-    function formatDateTime(now) {
-      return now.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
+    function getDailyStandardHours(cfg) {
+      return calcHoursBySchedule(cfg.workStart, cfg.workEnd, cfg.breakStart, cfg.breakEnd);
     }
 
     function isOffDay(date, cfg) {
@@ -587,21 +653,6 @@
         breakStart: cfg.breakStart,
         breakEnd: cfg.breakEnd
       };
-    }
-
-    function calcHoursBySchedule(workStart, workEnd, breakStart, breakEnd) {
-      if (!workStart || !workEnd) return 0;
-      const ws = timeToMinutes(workStart);
-      const we = timeToMinutes(workEnd);
-      const bs = timeToMinutes(breakStart);
-      const be = timeToMinutes(breakEnd);
-      const total = Math.max(0, we - ws);
-      const overlap = Math.max(0, Math.min(we, be) - Math.max(ws, bs));
-      return Math.max(0, (total - overlap) / 60);
-    }
-
-    function getDailyStandardHours(cfg) {
-      return calcHoursBySchedule(cfg.workStart, cfg.workEnd, cfg.breakStart, cfg.breakEnd);
     }
 
     function isActiveWorkDate(date, cfg) {
@@ -693,7 +744,7 @@
         currentSettings.breakStart,
         currentSettings.breakEnd
       );
-      el.dayPreview.value = formatHMS(hours);
+      el.dayPreview.value = formatClockHMS(hours);
     }
 
     function renderDatePicker(cfg) {
@@ -722,7 +773,8 @@
           saveSettings(currentSettings);
           renderDatePicker(currentSettings);
           refreshSelectedEditor();
-          updateView(currentSettings);
+          renderStaticView(currentSettings);
+          renderLiveView(currentSettings);
         });
 
         el.datePickerGrid.appendChild(cell);
@@ -789,29 +841,6 @@
       };
     }
 
-    function animateNumber(key, to, duration, render) {
-      const from = animated.has(key) ? animated.get(key) : to;
-      const start = performance.now();
-      const startVal = from;
-      const diff = to - startVal;
-      cancelAnimationFrame(animated.get(`${key}_raf`));
-
-      function frame(ts) {
-        const p = Math.min(1, (ts - start) / duration);
-        const eased = 1 - Math.pow(1 - p, 3);
-        const current = startVal + diff * eased;
-        animated.set(key, current);
-        render(current);
-        if (p < 1) animated.set(`${key}_raf`, requestAnimationFrame(frame));
-        else {
-          animated.set(key, to);
-          render(to);
-        }
-      }
-
-      animated.set(`${key}_raf`, requestAnimationFrame(frame));
-    }
-
     function renderBars(stats) {
       el.bars.innerHTML = '';
       const maxMoney = Math.max(...stats.daily.map(d => d.money), 1);
@@ -838,7 +867,22 @@
       });
     }
 
-    function updateView(cfg) {
+    function renderStaticView(cfg) {
+      const now = new Date();
+      const stats = getPeriodStats(now, cfg);
+
+      el.periodMoneyBig.textContent = formatMoney(stats.totalMoney);
+      el.periodMoney.textContent = formatMoney(stats.totalMoney);
+      el.periodHours.textContent = stats.totalHours.toFixed(2);
+      el.periodDays.textContent = String(stats.workedDays);
+      el.avgMoney.textContent = formatMoney(stats.avgMoney);
+      el.dailyStandard.textContent = stats.standardHours.toFixed(2);
+
+      renderBars(stats);
+      refreshSelectedEditor();
+    }
+
+    function renderLiveView(cfg) {
       const now = new Date();
       const todayHours = workedMinutesAt(now, cfg) / 60;
       const todayMoney = todayHours * cfg.rate;
@@ -850,29 +894,28 @@
         todaySchedule.breakEnd
       );
       const progress = todayStandard > 0 ? Math.min(100, todayHours / todayStandard * 100) : 0;
-      const stats = getPeriodStats(now, cfg);
 
       el.nowText.textContent = formatDateTime(now);
-      animateNumber('todayHours', todayHours, 500, v => el.todayHours.textContent = formatHMS(v));
-      animateNumber('todayMoney', todayMoney, 500, v => el.todayMoney.textContent = formatMoney(v));
-      animateNumber('todayProgress', progress, 500, v => el.todayProgress.textContent = `${v.toFixed(0)}%`);
-      animateNumber('periodMoneyBig', stats.totalMoney, 620, v => el.periodMoneyBig.textContent = formatMoney(v));
-      animateNumber('periodMoney', stats.totalMoney, 620, v => el.periodMoney.textContent = formatMoney(v));
-      animateNumber('periodHours', stats.totalHours, 620, v => el.periodHours.textContent = v.toFixed(2));
-      animateNumber('periodDays', stats.workedDays, 620, v => el.periodDays.textContent = Math.round(v));
-      animateNumber('avgMoney', stats.avgMoney, 620, v => el.avgMoney.textContent = formatMoney(v));
-      animateNumber('dailyStandard', stats.standardHours, 620, v => el.dailyStandard.textContent = v.toFixed(2));
+      el.todayHours.textContent = formatClockHMS(todayHours);
+      el.todayMoney.textContent = formatMoney(todayMoney);
+      el.todayProgress.textContent = `${Math.round(progress)}%`;
       el.timelineBar.style.width = `${progress}%`;
-      el.timelineLabel.textContent = `${progress.toFixed(0)}%`;
-      renderBars(stats);
-      refreshSelectedEditor();
+      el.timelineLabel.textContent = `${Math.round(progress)}%`;
+    }
+
+    function restartSecondTimer() {
+      if (secondTimer) clearInterval(secondTimer);
+      secondTimer = setInterval(() => {
+        renderLiveView(currentSettings);
+      }, 1000);
     }
 
     fillForm(currentSettings);
     renderDatePicker(currentSettings);
     saveSettings(currentSettings);
-    updateView(currentSettings);
-    setInterval(() => updateView(currentSettings), 1000);
+    renderStaticView(currentSettings);
+    renderLiveView(currentSettings);
+    restartSecondTimer();
 
     el.dayWorkStart.addEventListener('input', () => {
       const hours = calcHoursBySchedule(
@@ -881,7 +924,7 @@
         currentSettings.breakStart,
         currentSettings.breakEnd
       );
-      el.dayPreview.value = formatHMS(hours);
+      el.dayPreview.value = formatClockHMS(hours);
     });
 
     el.dayWorkEnd.addEventListener('input', () => {
@@ -891,7 +934,7 @@
         currentSettings.breakStart,
         currentSettings.breakEnd
       );
-      el.dayPreview.value = formatHMS(hours);
+      el.dayPreview.value = formatClockHMS(hours);
     });
 
     el.applyDayBtn.addEventListener('click', () => {
@@ -919,11 +962,11 @@
 
       currentSettings.dailyOverrides = currentSettings.dailyOverrides || {};
       currentSettings.dailyOverrides[selectedDate] = { workStart: ws, workEnd: we };
+
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
-      updateView(currentSettings);
-      el.applyDayBtn.textContent = '已保存';
-      setTimeout(() => el.applyDayBtn.textContent = '保存该日时间', 1200);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
     });
 
     el.clearDayBtn.addEventListener('click', () => {
@@ -938,7 +981,8 @@
 
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
-      updateView(currentSettings);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
     });
 
     el.saveBtn.addEventListener('click', () => {
@@ -957,7 +1001,10 @@
 
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
-      updateView(currentSettings);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
+      restartSecondTimer();
+
       el.saveBtn.textContent = '已保存';
       setTimeout(() => el.saveBtn.textContent = '保存设置', 1200);
     });
@@ -968,7 +1015,9 @@
       fillForm(currentSettings);
       renderDatePicker(currentSettings);
       saveSettings(currentSettings);
-      updateView(currentSettings);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
+      restartSecondTimer();
     });
   </script>
 </body>
