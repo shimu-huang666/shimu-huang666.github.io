@@ -50,6 +50,7 @@
     }
     .group h3 { margin: 0 0 12px; font-size: 14px; color: #374151; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
     .field:last-child { margin-bottom: 0; }
     label { font-size: 12px; color: var(--muted); }
@@ -172,6 +173,7 @@
     .date-cell:hover { transform: translateY(-1px); }
     .date-cell.active { background: #111827; color: #fff; border-color: #111827; }
     .date-cell.muted { opacity: .5; }
+    .date-cell.selected { box-shadow: 0 0 0 2px rgba(17,24,39,0.16); }
     .date-cell em {
       position: absolute;
       right: 6px;
@@ -180,6 +182,39 @@
       font-size: 10px;
       opacity: .7;
     }
+    .date-cell strong {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      opacity: .8;
+    }
+    .day-editor {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .day-editor-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(17,24,39,0.06);
+      color: #374151;
+      font-size: 12px;
+    }
+    .tiny { font-size: 12px; color: #9ca3af; }
+    .editor-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
     .bars { height: 260px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(10px, 1fr); align-items: end; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
     .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .bar {
@@ -206,7 +241,7 @@
     }
     @media (max-width: 640px) {
       .wrap { width: min(100vw - 18px, 1180px); margin: 10px auto 20px; }
-      .cards, .grid2, .kv, .actions { grid-template-columns: 1fr; }
+      .cards, .grid2, .grid3, .kv, .actions, .editor-actions { grid-template-columns: 1fr; }
       .weekend { grid-template-columns: repeat(4, 1fr); }
       .cards { grid-template-columns: 1fr; }
     }
@@ -216,7 +251,7 @@
   <div class="wrap">
     <aside class="panel sidebar">
       <h1 class="title">兼职工时与收入面板</h1>
-      <p class="desc">适合兼职。你可以设置结算周期、上下班时间、午休、时薪，并手动勾选实际上班日期。系统只统计你选中的日期。</p>
+      <p class="desc">适合兼职。你可以设置结算周期、默认上下班时间、午休、时薪，并手动勾选实际上班日期。还可以对某一天单独改上下班时间。</p>
 
       <div class="group">
         <h3>基础参数</h3>
@@ -226,11 +261,11 @@
         </div>
         <div class="grid2">
           <div class="field">
-            <label for="workStart">上班时间</label>
+            <label for="workStart">默认上班时间</label>
             <input id="workStart" type="time" />
           </div>
           <div class="field">
-            <label for="workEnd">下班时间</label>
+            <label for="workEnd">默认下班时间</label>
             <input id="workEnd" type="time" />
           </div>
         </div>
@@ -280,7 +315,7 @@
         <div>
           <div class="eyebrow">按操作更新</div>
           <h2 class="big" id="todayHours">0.00 小时</h2>
-          <div class="subbig">只有在你点击日期、保存设置、恢复默认时才更新界面，避免图表频繁跳动。</div>
+          <div class="subbig">支持给某一天单独设置上下班时间。未单独设置的日期，自动使用左侧默认时间。</div>
           <div class="kv">
             <div class="mini">
               <div class="k">今日收入</div>
@@ -334,7 +369,7 @@
         <div class="card">
           <div class="k">标准单日工时</div>
           <div class="v" id="dailyStandard">0.00</div>
-          <div class="s">= 下班 - 上班 - 午休</div>
+          <div class="s">按默认时间计算</div>
         </div>
       </section>
 
@@ -342,7 +377,7 @@
         <div class="chart-top">
           <div>
             <h3 class="chart-title">实际上班日选择</h3>
-            <p class="chart-sub">点击日期切换是否上班。只有勾选的日期会参与统计。</p>
+            <p class="chart-sub">点击日期切换是否上班，再点一次日期可在下方编辑这一天的上下班时间。</p>
           </div>
         </div>
         <div class="date-grid" id="datePickerGrid"></div>
@@ -351,8 +386,43 @@
       <section class="panel chart-card">
         <div class="chart-top">
           <div>
+            <h3 class="chart-title">单日上下班设置</h3>
+            <p class="chart-sub">当前选中日期可单独设置。留空或恢复默认后，会重新使用左侧默认上下班时间。</p>
+          </div>
+        </div>
+        <div class="day-editor">
+          <div class="day-editor-head">
+            <div>
+              <div class="tag" id="selectedDateText">未选择日期</div>
+            </div>
+            <div class="tiny" id="selectedDateHint">先点击上方某个日期</div>
+          </div>
+          <div class="grid3">
+            <div class="field">
+              <label for="dayWorkStart">该日上班时间</label>
+              <input id="dayWorkStart" type="time" />
+            </div>
+            <div class="field">
+              <label for="dayWorkEnd">该日下班时间</label>
+              <input id="dayWorkEnd" type="time" />
+            </div>
+            <div class="field">
+              <label for="dayPreview">该日预计工时</label>
+              <input id="dayPreview" type="text" readonly />
+            </div>
+          </div>
+          <div class="editor-actions">
+            <button class="primary" id="applyDayBtn">保存该日时间</button>
+            <button class="secondary" id="clearDayBtn">恢复该日默认</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel chart-card">
+        <div class="chart-top">
+          <div>
             <h3 class="chart-title">当前周期每日收入</h3>
-            <p class="chart-sub">未勾选日期、休息日和未来日期都会显示为低亮度。</p>
+            <p class="chart-sub">未勾选日期、未来日期都会显示为低亮度；设置了单日时间的日期左上角会显示“自”。</p>
           </div>
         </div>
         <div class="bars" id="bars"></div>
@@ -363,12 +433,12 @@
         </div>
       </section>
 
-      <div class="footer-note">兼职工时统计页 · 结算周期可调 · 只统计你勾选的日期</div>
+      <div class="footer-note">兼职工时统计页 · 结算周期可调 · 支持单独设置某一天的上下班时间</div>
     </main>
   </div>
 
   <script>
-    const STORAGE_KEY = 'part_time_dashboard_settings_v3';
+    const STORAGE_KEY = 'part_time_dashboard_settings_v4';
     const WEEK_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     function toDateString(date) {
@@ -392,7 +462,8 @@
       periodStart: addDays(todayStr, -15),
       periodEnd: addDays(todayStr, 15),
       weekends: [0, 6],
-      activeDates: [todayStr]
+      activeDates: [todayStr],
+      dailyOverrides: {}
     };
 
     const el = {
@@ -419,10 +490,18 @@
       dailyStandard: document.getElementById('dailyStandard'),
       timelineBar: document.getElementById('timelineBar'),
       timelineLabel: document.getElementById('timelineLabel'),
-      bars: document.getElementById('bars')
+      bars: document.getElementById('bars'),
+      selectedDateText: document.getElementById('selectedDateText'),
+      selectedDateHint: document.getElementById('selectedDateHint'),
+      dayWorkStart: document.getElementById('dayWorkStart'),
+      dayWorkEnd: document.getElementById('dayWorkEnd'),
+      dayPreview: document.getElementById('dayPreview'),
+      applyDayBtn: document.getElementById('applyDayBtn'),
+      clearDayBtn: document.getElementById('clearDayBtn')
     };
 
     const animated = new Map();
+    let selectedDate = null;
     let currentSettings = loadSettings();
 
     function loadSettings() {
@@ -439,7 +518,8 @@
           periodStart: data.periodStart || DEFAULTS.periodStart,
           periodEnd: data.periodEnd || DEFAULTS.periodEnd,
           weekends: Array.isArray(data.weekends) ? data.weekends : [...DEFAULTS.weekends],
-          activeDates: Array.isArray(data.activeDates) ? data.activeDates : [...DEFAULTS.activeDates]
+          activeDates: Array.isArray(data.activeDates) ? data.activeDates : [...DEFAULTS.activeDates],
+          dailyOverrides: data.dailyOverrides && typeof data.dailyOverrides === 'object' ? data.dailyOverrides : {}
         };
       } catch {
         return JSON.parse(JSON.stringify(DEFAULTS));
@@ -481,14 +561,29 @@
       return arr;
     }
 
-    function getDailyStandardHours(cfg) {
-      const ws = timeToMinutes(cfg.workStart);
-      const we = timeToMinutes(cfg.workEnd);
-      const bs = timeToMinutes(cfg.breakStart);
-      const be = timeToMinutes(cfg.breakEnd);
+    function getScheduleForDate(dateKey, cfg) {
+      const override = cfg.dailyOverrides?.[dateKey];
+      return {
+        workStart: override?.workStart || cfg.workStart,
+        workEnd: override?.workEnd || cfg.workEnd,
+        breakStart: cfg.breakStart,
+        breakEnd: cfg.breakEnd
+      };
+    }
+
+    function calcHoursBySchedule(workStart, workEnd, breakStart, breakEnd) {
+      if (!workStart || !workEnd) return 0;
+      const ws = timeToMinutes(workStart);
+      const we = timeToMinutes(workEnd);
+      const bs = timeToMinutes(breakStart);
+      const be = timeToMinutes(breakEnd);
       const total = Math.max(0, we - ws);
       const overlap = Math.max(0, Math.min(we, be) - Math.max(ws, bs));
       return Math.max(0, (total - overlap) / 60);
+    }
+
+    function getDailyStandardHours(cfg) {
+      return calcHoursBySchedule(cfg.workStart, cfg.workEnd, cfg.breakStart, cfg.breakEnd);
     }
 
     function isActiveWorkDate(date, cfg) {
@@ -500,10 +595,11 @@
       if (key < cfg.periodStart || key > cfg.periodEnd) return 0;
       if (!isActiveWorkDate(date, cfg)) return 0;
 
-      const ws = timeToMinutes(cfg.workStart);
-      const we = timeToMinutes(cfg.workEnd);
-      const bs = timeToMinutes(cfg.breakStart);
-      const be = timeToMinutes(cfg.breakEnd);
+      const schedule = getScheduleForDate(key, cfg);
+      const ws = timeToMinutes(schedule.workStart);
+      const we = timeToMinutes(schedule.workEnd);
+      const bs = timeToMinutes(schedule.breakStart);
+      const be = timeToMinutes(schedule.breakEnd);
       const nowM = date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
       if (nowM <= ws) return 0;
 
@@ -549,8 +645,27 @@
         periodStart: el.periodStart.value || DEFAULTS.periodStart,
         periodEnd: el.periodEnd.value || DEFAULTS.periodEnd,
         weekends,
-        activeDates: [...(currentSettings.activeDates || [])]
+        activeDates: [...(currentSettings.activeDates || [])],
+        dailyOverrides: { ...(currentSettings.dailyOverrides || {}) }
       };
+    }
+
+    function refreshSelectedEditor() {
+      if (!selectedDate) {
+        el.selectedDateText.textContent = '未选择日期';
+        el.selectedDateHint.textContent = '先点击上方某个日期';
+        el.dayWorkStart.value = '';
+        el.dayWorkEnd.value = '';
+        el.dayPreview.value = '';
+        return;
+      }
+      const ov = currentSettings.dailyOverrides?.[selectedDate];
+      el.selectedDateText.textContent = selectedDate;
+      el.selectedDateHint.textContent = ov ? '当前日期已使用单独时间' : '当前日期使用默认时间';
+      el.dayWorkStart.value = ov?.workStart || currentSettings.workStart;
+      el.dayWorkEnd.value = ov?.workEnd || currentSettings.workEnd;
+      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
+      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
     }
 
     function renderDatePicker(cfg) {
@@ -560,16 +675,21 @@
         const key = toDateString(date);
         const active = (cfg.activeDates || []).includes(key);
         const off = isOffDay(date, cfg);
+        const hasOverride = !!cfg.dailyOverrides?.[key];
         const cell = document.createElement('div');
-        cell.className = `date-cell${active ? ' active' : ''}${off ? ' muted' : ''}`;
-        cell.innerHTML = `<span>${date.getDate()}</span>${off ? '<em>休</em>' : ''}`;
+        cell.className = `date-cell${active ? ' active' : ''}${off ? ' muted' : ''}${selectedDate === key ? ' selected' : ''}`;
+        cell.innerHTML = `${hasOverride ? '<strong>自</strong>' : ''}<span>${date.getDate()}</span>${off ? '<em>休</em>' : ''}`;
         cell.title = key;
         cell.addEventListener('click', () => {
-          const set = new Set(currentSettings.activeDates || []);
-          if (set.has(key)) set.delete(key); else set.add(key);
-          currentSettings.activeDates = [...set].sort();
+          if (selectedDate === key) {
+            const set = new Set(currentSettings.activeDates || []);
+            if (set.has(key)) set.delete(key); else set.add(key);
+            currentSettings.activeDates = [...set].sort();
+          }
+          selectedDate = key;
           saveSettings(currentSettings);
           renderDatePicker(currentSettings);
+          refreshSelectedEditor();
           updateView(currentSettings);
         });
         el.datePickerGrid.appendChild(cell);
@@ -578,8 +698,6 @@
 
     function getPeriodStats(now, cfg) {
       const range = getDateRange(cfg.periodStart, cfg.periodEnd);
-      const standardHours = getDailyStandardHours(cfg);
-      const standardMoney = standardHours * cfg.rate;
       const todayKey = toDateString(now);
 
       let totalHours = 0;
@@ -592,6 +710,8 @@
         const active = isActiveWorkDate(d0, cfg);
         const isFuture = key > todayKey;
         const isToday = key === todayKey;
+        const schedule = getScheduleForDate(key, cfg);
+        const standardHoursForDay = calcHoursBySchedule(schedule.workStart, schedule.workEnd, schedule.breakStart, schedule.breakEnd);
         let hours = 0;
         let money = 0;
 
@@ -601,14 +721,14 @@
             hours = workedMinutesAt(now, cfg) / 60;
             money = hours * cfg.rate;
           } else {
-            hours = standardHours;
-            money = standardMoney;
+            hours = standardHoursForDay;
+            money = standardHoursForDay * cfg.rate;
           }
         }
 
         totalHours += hours;
         totalMoney += money;
-        daily.push({ key, day: d0.getDate(), active, isFuture, isToday, money, hours });
+        daily.push({ key, day: d0.getDate(), active, isFuture, isToday, money, hours, hasOverride: !!cfg.dailyOverrides?.[key] });
       }
 
       return {
@@ -616,7 +736,7 @@
         totalMoney,
         workedDays,
         avgMoney: workedDays ? totalMoney / workedDays : 0,
-        standardHours,
+        standardHours: getDailyStandardHours(cfg),
         daily
       };
     }
@@ -651,7 +771,7 @@
         if (!item.active || item.isFuture) bar.classList.add('off');
         if (item.isToday) bar.classList.add('today');
         bar.style.height = `${h}px`;
-        bar.title = `${item.key}：${formatMoney(item.money)} / ${item.hours.toFixed(2)} 小时`;
+        bar.title = `${item.key}：${formatMoney(item.money)} / ${item.hours.toFixed(2)} 小时${item.hasOverride ? ' / 单独时间' : ''}`;
         const day = document.createElement('div');
         day.className = 'day';
         day.textContent = item.day;
@@ -665,8 +785,9 @@
       const now = new Date();
       const todayHours = workedMinutesAt(now, cfg) / 60;
       const todayMoney = todayHours * cfg.rate;
-      const standardHours = getDailyStandardHours(cfg);
-      const progress = standardHours > 0 ? Math.min(100, todayHours / standardHours * 100) : 0;
+      const todaySchedule = getScheduleForDate(todayStr, cfg);
+      const todayStandard = calcHoursBySchedule(todaySchedule.workStart, todaySchedule.workEnd, todaySchedule.breakStart, todaySchedule.breakEnd);
+      const progress = todayStandard > 0 ? Math.min(100, todayHours / todayStandard * 100) : 0;
       const stats = getPeriodStats(now, cfg);
 
       el.nowText.textContent = formatDateTime(now);
@@ -682,12 +803,62 @@
       el.timelineBar.style.width = `${progress}%`;
       el.timelineLabel.textContent = `${progress.toFixed(0)}%`;
       renderBars(stats);
+      refreshSelectedEditor();
     }
 
     fillForm(currentSettings);
     renderDatePicker(currentSettings);
     saveSettings(currentSettings);
     updateView(currentSettings);
+
+    el.dayWorkStart.addEventListener('input', () => {
+      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
+      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
+    });
+    el.dayWorkEnd.addEventListener('input', () => {
+      const hours = calcHoursBySchedule(el.dayWorkStart.value, el.dayWorkEnd.value, currentSettings.breakStart, currentSettings.breakEnd);
+      el.dayPreview.value = `${hours.toFixed(2)} 小时`;
+    });
+
+    el.applyDayBtn.addEventListener('click', () => {
+      if (!selectedDate) {
+        alert('请先选择一个日期');
+        return;
+      }
+      const ws = el.dayWorkStart.value;
+      const we = el.dayWorkEnd.value;
+      if (!ws || !we) {
+        alert('请先填写上班和下班时间');
+        return;
+      }
+      if (timeToMinutes(we) <= timeToMinutes(ws)) {
+        alert('下班时间必须晚于上班时间');
+        return;
+      }
+      if (!(currentSettings.activeDates || []).includes(selectedDate)) {
+        currentSettings.activeDates = [...new Set([...(currentSettings.activeDates || []), selectedDate])].sort();
+      }
+      currentSettings.dailyOverrides = currentSettings.dailyOverrides || {};
+      currentSettings.dailyOverrides[selectedDate] = { workStart: ws, workEnd: we };
+      saveSettings(currentSettings);
+      renderDatePicker(currentSettings);
+      updateView(currentSettings);
+      el.applyDayBtn.textContent = '已保存';
+      setTimeout(() => el.applyDayBtn.textContent = '保存该日时间', 1200);
+    });
+
+    el.clearDayBtn.addEventListener('click', () => {
+      if (!selectedDate) {
+        alert('请先选择一个日期');
+        return;
+      }
+      if (currentSettings.dailyOverrides?.[selectedDate]) {
+        delete currentSettings.dailyOverrides[selectedDate];
+      }
+      saveSettings(currentSettings);
+      renderDatePicker(currentSettings);
+      updateView(currentSettings);
+    });
 
     el.saveBtn.addEventListener('click', () => {
       const next = getFormSettings();
@@ -696,7 +867,15 @@
         return;
       }
       next.activeDates = next.activeDates.filter(d => d >= next.periodStart && d <= next.periodEnd);
+      const cleanedOverrides = {};
+      Object.entries(next.dailyOverrides || {}).forEach(([k, v]) => {
+        if (k >= next.periodStart && k <= next.periodEnd) cleanedOverrides[k] = v;
+      });
+      next.dailyOverrides = cleanedOverrides;
       currentSettings = next;
+      if (selectedDate && (selectedDate < currentSettings.periodStart || selectedDate > currentSettings.periodEnd)) {
+        selectedDate = null;
+      }
       saveSettings(currentSettings);
       renderDatePicker(currentSettings);
       updateView(currentSettings);
@@ -706,6 +885,7 @@
 
     el.resetBtn.addEventListener('click', () => {
       currentSettings = JSON.parse(JSON.stringify(DEFAULTS));
+      selectedDate = null;
       fillForm(currentSettings);
       renderDatePicker(currentSettings);
       saveSettings(currentSettings);
