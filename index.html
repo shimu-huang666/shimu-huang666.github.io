@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>兼职工时与收入面板</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -89,7 +90,7 @@
     }
     .weekend input { display: none; }
     .weekend label.checked { background: #111827; color: #fff; border-color: #111827; }
-    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions, .auth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button { padding: 12px 14px; cursor: pointer; font-weight: 700; }
     button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(15,23,42,0.08); }
     .primary { background: #111827; color: #fff; border-color: #111827; }
@@ -286,6 +287,13 @@
     .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 16px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: -1px; }
     .footer-note { text-align: center; color: #9ca3af; font-size: 12px; padding-bottom: 10px; }
+    .status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    .hidden { display: none !important; }
     @keyframes rise { from { transform: scaleY(.2); opacity: .3; } to { transform: scaleY(1); opacity: .92; } }
     @media (max-width: 1080px) {
       .wrap { grid-template-columns: 1fr; }
@@ -295,7 +303,7 @@
     }
     @media (max-width: 640px) {
       .wrap { width: min(100vw - 18px, 1180px); margin: 10px auto 20px; }
-      .cards, .grid2, .grid3, .kv, .actions, .editor-actions { grid-template-columns: 1fr; }
+      .cards, .grid2, .grid3, .kv, .actions, .editor-actions, .auth-actions { grid-template-columns: 1fr; }
       .weekend { grid-template-columns: repeat(4, 1fr); }
       .cards { grid-template-columns: 1fr; }
       .big { font-size: 40px; }
@@ -306,7 +314,36 @@
   <div class="wrap">
     <aside class="panel sidebar">
       <h1 class="title">兼职工时与收入面板</h1>
-      <p class="desc">适合兼职。你可以设置结算周期、默认上下班时间、午休、时薪，并手动勾选实际上班日期。还可以对某一天单独改上下班时间。</p>
+      <p class="desc">支持账号登录、自动登录、云端同步，多设备可访问同一份数据。</p>
+
+      <div class="group">
+        <h3>账号</h3>
+        <div id="authLoggedOut">
+          <div class="field">
+            <label for="email">邮箱</label>
+            <input id="email" type="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="password">密码</label>
+            <input id="password" type="password" placeholder="至少 6 位" />
+          </div>
+          <div class="auth-actions">
+            <button class="primary" id="registerBtn">注册</button>
+            <button class="secondary" id="loginBtn">登录</button>
+          </div>
+        </div>
+        <div id="authLoggedIn" class="hidden">
+          <div class="field">
+            <label>当前账号</label>
+            <input id="currentUserEmail" type="text" readonly />
+          </div>
+          <div class="auth-actions">
+            <button class="primary" id="syncBtn">同步到云端</button>
+            <button class="secondary" id="logoutBtn">退出登录</button>
+          </div>
+        </div>
+        <div class="status" id="authStatus"></div>
+      </div>
 
       <div class="group">
         <h3>基础参数</h3>
@@ -488,13 +525,18 @@
         </div>
       </section>
 
-      <div class="footer-note">兼职工时统计页 · 结算周期可调 · 支持单独设置某一天的上下班时间</div>
+      <div class="footer-note">兼职工时统计页 · 结算周期可调 · 支持单独设置某一天的上下班时间 · 支持云同步</div>
     </main>
   </div>
 
   <script>
-    const STORAGE_KEY = 'part_time_dashboard_settings_v4';
+    const SUPABASE_URL = 'https://sivrondtgdrjtwqztbrx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpdnJvbmR0Z2RyanR3cXp0YnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjI0NTEsImV4cCI6MjA4ODYzODQ1MX0.yuIvT4qw3IExnoFCgrKvBVwuxuzJG9M6U5HQ2n08Ges';
+
+    const LOCAL_CACHE_KEY = 'part_time_dashboard_settings_v5_cache';
     const WEEK_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function toDateString(date) {
       const y = date.getFullYear();
@@ -541,6 +583,17 @@
     };
 
     const el = {
+      email: document.getElementById('email'),
+      password: document.getElementById('password'),
+      registerBtn: document.getElementById('registerBtn'),
+      loginBtn: document.getElementById('loginBtn'),
+      syncBtn: document.getElementById('syncBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      authStatus: document.getElementById('authStatus'),
+      authLoggedOut: document.getElementById('authLoggedOut'),
+      authLoggedIn: document.getElementById('authLoggedIn'),
+      currentUserEmail: document.getElementById('currentUserEmail'),
+
       rate: document.getElementById('rate'),
       workStart: document.getElementById('workStart'),
       workEnd: document.getElementById('workEnd'),
@@ -575,12 +628,17 @@
     };
 
     let selectedDate = null;
-    let currentSettings = loadSettings();
+    let currentSettings = loadLocalCache();
     let secondTimer = null;
+    let currentUser = null;
 
-    function loadSettings() {
+    function setStatus(text) {
+      el.authStatus.textContent = text || '';
+    }
+
+    function loadLocalCache() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(LOCAL_CACHE_KEY);
         if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
         const data = JSON.parse(raw);
         return {
@@ -600,8 +658,35 @@
       }
     }
 
-    function saveSettings(cfg) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    function saveLocalCache(cfg) {
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cfg));
+    }
+
+    async function loadRemoteSettings() {
+      if (!currentUser) return null;
+      const { data, error } = await supabaseClient
+        .from('work_profiles')
+        .select('settings_json')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data?.settings_json || null;
+    }
+
+    async function saveRemoteSettings(cfg) {
+      if (!currentUser) return;
+      const payload = {
+        user_id: currentUser.id,
+        settings_json: cfg,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabaseClient
+        .from('work_profiles')
+        .upsert(payload, { onConflict: 'user_id' });
+
+      if (error) throw error;
     }
 
     function timeToMinutes(t) {
@@ -762,7 +847,7 @@
         cell.innerHTML = `${hasOverride ? '<strong>自</strong>' : ''}<span>${date.getDate()}</span>${off ? '<em>休</em>' : ''}`;
         cell.title = key;
 
-        cell.addEventListener('click', () => {
+        cell.addEventListener('click', async () => {
           if (selectedDate === key) {
             const set = new Set(currentSettings.activeDates || []);
             if (set.has(key)) set.delete(key);
@@ -770,7 +855,7 @@
             currentSettings.activeDates = [...set].sort();
           }
           selectedDate = key;
-          saveSettings(currentSettings);
+          saveLocalCache(currentSettings);
           renderDatePicker(currentSettings);
           refreshSelectedEditor();
           renderStaticView(currentSettings);
@@ -910,12 +995,109 @@
       }, 1000);
     }
 
-    fillForm(currentSettings);
-    renderDatePicker(currentSettings);
-    saveSettings(currentSettings);
-    renderStaticView(currentSettings);
-    renderLiveView(currentSettings);
-    restartSecondTimer();
+    function updateAuthUI(user) {
+      const loggedIn = !!user;
+      el.authLoggedOut.classList.toggle('hidden', loggedIn);
+      el.authLoggedIn.classList.toggle('hidden', !loggedIn);
+      el.currentUserEmail.value = user?.email || '';
+    }
+
+    async function register() {
+      const email = el.email.value.trim();
+      const password = el.password.value;
+      if (!email || !password) {
+        setStatus('请输入邮箱和密码。');
+        return;
+      }
+      setStatus('注册中...');
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        setStatus(`注册失败：${error.message}`);
+        return;
+      }
+      setStatus('注册成功。若开启邮箱验证，请先去邮箱确认。');
+    }
+
+    async function login() {
+      const email = el.email.value.trim();
+      const password = el.password.value;
+      if (!email || !password) {
+        setStatus('请输入邮箱和密码。');
+        return;
+      }
+      setStatus('登录中...');
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        setStatus(`登录失败：${error.message}`);
+        return;
+      }
+      setStatus('登录成功。');
+    }
+
+    async function logout() {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        setStatus(`退出失败：${error.message}`);
+        return;
+      }
+      setStatus('已退出登录。');
+    }
+
+    async function syncToCloud() {
+      if (!currentUser) {
+        setStatus('请先登录。');
+        return;
+      }
+      try {
+        setStatus('同步中...');
+        await saveRemoteSettings(currentSettings);
+        setStatus('已同步到云端。');
+      } catch (err) {
+        setStatus(`同步失败：${err.message}`);
+      }
+    }
+
+    async function handleSession(user) {
+      currentUser = user || null;
+      updateAuthUI(currentUser);
+
+      if (!currentUser) {
+        currentSettings = loadLocalCache();
+        fillForm(currentSettings);
+        renderDatePicker(currentSettings);
+        renderStaticView(currentSettings);
+        renderLiveView(currentSettings);
+        restartSecondTimer();
+        return;
+      }
+
+      try {
+        setStatus('正在加载云端数据...');
+        const remote = await loadRemoteSettings();
+        if (remote) {
+          currentSettings = {
+            ...JSON.parse(JSON.stringify(DEFAULTS)),
+            ...remote,
+            weekends: Array.isArray(remote.weekends) ? remote.weekends : [...DEFAULTS.weekends],
+            activeDates: Array.isArray(remote.activeDates) ? remote.activeDates : [...DEFAULTS.activeDates],
+            dailyOverrides: remote.dailyOverrides && typeof remote.dailyOverrides === 'object' ? remote.dailyOverrides : {}
+          };
+          saveLocalCache(currentSettings);
+          setStatus('已加载云端数据。');
+        } else {
+          await saveRemoteSettings(currentSettings);
+          setStatus('首次登录，已将本地数据上传到云端。');
+        }
+      } catch (err) {
+        setStatus(`云端加载失败，已使用本地缓存：${err.message}`);
+      }
+
+      fillForm(currentSettings);
+      renderDatePicker(currentSettings);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
+      restartSecondTimer();
+    }
 
     el.dayWorkStart.addEventListener('input', () => {
       const hours = calcHoursBySchedule(
@@ -937,7 +1119,7 @@
       el.dayPreview.value = formatClockHMS(hours);
     });
 
-    el.applyDayBtn.addEventListener('click', () => {
+    el.applyDayBtn.addEventListener('click', async () => {
       if (!selectedDate) {
         alert('请先选择一个日期');
         return;
@@ -963,13 +1145,13 @@
       currentSettings.dailyOverrides = currentSettings.dailyOverrides || {};
       currentSettings.dailyOverrides[selectedDate] = { workStart: ws, workEnd: we };
 
-      saveSettings(currentSettings);
+      saveLocalCache(currentSettings);
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
     });
 
-    el.clearDayBtn.addEventListener('click', () => {
+    el.clearDayBtn.addEventListener('click', async () => {
       if (!selectedDate) {
         alert('请先选择一个日期');
         return;
@@ -979,13 +1161,13 @@
         delete currentSettings.dailyOverrides[selectedDate];
       }
 
-      saveSettings(currentSettings);
+      saveLocalCache(currentSettings);
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
     });
 
-    el.saveBtn.addEventListener('click', () => {
+    el.saveBtn.addEventListener('click', async () => {
       const next = getFormSettings();
 
       if (next.periodStart > next.periodEnd) {
@@ -999,7 +1181,7 @@
         selectedDate = null;
       }
 
-      saveSettings(currentSettings);
+      saveLocalCache(currentSettings);
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
@@ -1009,16 +1191,38 @@
       setTimeout(() => el.saveBtn.textContent = '保存设置', 1200);
     });
 
-    el.resetBtn.addEventListener('click', () => {
+    el.resetBtn.addEventListener('click', async () => {
       currentSettings = JSON.parse(JSON.stringify(DEFAULTS));
       selectedDate = null;
       fillForm(currentSettings);
       renderDatePicker(currentSettings);
-      saveSettings(currentSettings);
+      saveLocalCache(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
       restartSecondTimer();
     });
+
+    el.registerBtn.addEventListener('click', register);
+    el.loginBtn.addEventListener('click', login);
+    el.logoutBtn.addEventListener('click', logout);
+    el.syncBtn.addEventListener('click', syncToCloud);
+
+    async function init() {
+      fillForm(currentSettings);
+      renderDatePicker(currentSettings);
+      renderStaticView(currentSettings);
+      renderLiveView(currentSettings);
+      restartSecondTimer();
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      await handleSession(session?.user || null);
+
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        await handleSession(session?.user || null);
+      });
+    }
+
+    init();
   </script>
 </body>
 </html>
