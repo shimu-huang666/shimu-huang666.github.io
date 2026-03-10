@@ -202,13 +202,19 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     .card .s { font-size: 12px; color: #9ca3af; line-height: 1.6; }
-    .chart-card { padding: 22px; }
+    .chart-card { padding: 22px; max-width: 100%; }
     .chart-top { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 18px; }
     .chart-title { margin: 0; font-size: 20px; font-weight: 800; }
     .chart-sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
-    .date-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px; }
+    .workday-calendar { display: flex; flex-direction: column; gap: 4px; }
+    .workday-grid { display: grid; grid-template-columns: repeat(7, 58px); gap: 6px; }
+    .workday-header { display: grid; grid-template-columns: repeat(7, 58px); gap: 6px; margin-bottom: 8px; }
+    .workday-header span { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 0; }
+    .workday-month { font-size: 14px; font-weight: 700; margin: 12px 0 6px; color: var(--text); }
+    .workday-month:first-child { margin-top: 0; }
     .date-cell {
       min-height: 58px;
+      width: 58px;
       border-radius: 16px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,0.92);
@@ -270,7 +276,8 @@
     }
     .tiny { font-size: 12px; color: #9ca3af; }
     .editor-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-    .bars { height: 260px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(10px, 1fr); align-items: end; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .bars { height: 200px; display: grid; grid-auto-flow: column; grid-auto-columns: 10px; align-items: end; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+    .bars::-webkit-scrollbar { display: none; }
     .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .bar {
       width: 100%;
@@ -459,9 +466,9 @@
           <div class="s">按已发生且已勾选的上班日平均</div>
         </div>
         <div class="card">
-          <div class="k">标准单日工时</div>
+          <div class="k">当前周期日均工时</div>
           <div class="v" id="dailyStandard">0.00</div>
-          <div class="s">按默认时间计算</div>
+          <div class="s">按已工作天数平均</div>
         </div>
       </section>
 
@@ -472,7 +479,7 @@
             <p class="chart-sub">点击日期切换是否上班，再点一次日期可在下方编辑这一天的上下班时间。</p>
           </div>
         </div>
-        <div class="date-grid" id="datePickerGrid"></div>
+        <div class="workday-calendar" id="datePickerGrid"></div>
       </section>
 
       <section class="panel chart-card">
@@ -525,7 +532,7 @@
         </div>
       </section>
 
-      <div class="footer-note">兼职工时统计页 · 结算周期可调 · 支持单独设置某一天的上下班时间 · 支持云同步</div>
+      <div class="footer-note">Shimu v1.0.2</div>
     </main>
   </div>
 
@@ -835,8 +842,50 @@
     function renderDatePicker(cfg) {
       el.datePickerGrid.innerHTML = '';
       const range = getDateRange(cfg.periodStart, cfg.periodEnd);
+      if (range.length === 0) return;
+
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      let currentMonth = -1;
+      let gridContainer = null;
 
       range.forEach(date => {
+        const month = date.getFullYear() * 12 + date.getMonth();
+
+        // 新月份
+        if (month !== currentMonth) {
+          currentMonth = month;
+
+          // 月份标题
+          const monthTitle = document.createElement('div');
+          monthTitle.className = 'workday-month';
+          monthTitle.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+          el.datePickerGrid.appendChild(monthTitle);
+
+          // 星期标题
+          const header = document.createElement('div');
+          header.className = 'workday-header';
+          weekdays.forEach(w => {
+            const span = document.createElement('span');
+            span.textContent = '周' + w;
+            header.appendChild(span);
+          });
+          el.datePickerGrid.appendChild(header);
+
+          // 日期网格
+          gridContainer = document.createElement('div');
+          gridContainer.className = 'workday-grid';
+          el.datePickerGrid.appendChild(gridContainer);
+
+          // 填充月初空白
+          const firstDay = date.getDay();
+          for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'date-cell';
+            empty.style.visibility = 'hidden';
+            gridContainer.appendChild(empty);
+          }
+        }
+
         const key = toDateString(date);
         const active = (cfg.activeDates || []).includes(key);
         const off = isOffDay(date, cfg);
@@ -856,13 +905,14 @@
           }
           selectedDate = key;
           saveLocalCache(currentSettings);
+          autoSyncToCloud();
           renderDatePicker(currentSettings);
           refreshSelectedEditor();
           renderStaticView(currentSettings);
           renderLiveView(currentSettings);
         });
 
-        el.datePickerGrid.appendChild(cell);
+        gridContainer.appendChild(cell);
       });
     }
 
@@ -921,6 +971,7 @@
         totalMoney,
         workedDays,
         avgMoney: workedDays ? totalMoney / workedDays : 0,
+        avgHours: workedDays ? totalHours / workedDays : 0,
         standardHours: getDailyStandardHours(cfg),
         daily
       };
@@ -961,7 +1012,7 @@
       el.periodHours.textContent = stats.totalHours.toFixed(2);
       el.periodDays.textContent = String(stats.workedDays);
       el.avgMoney.textContent = formatMoney(stats.avgMoney);
-      el.dailyStandard.textContent = stats.standardHours.toFixed(2);
+      el.dailyStandard.textContent = stats.avgHours.toFixed(2);
 
       renderBars(stats);
       refreshSelectedEditor();
@@ -1057,6 +1108,21 @@
       }
     }
 
+    let autoSyncTimer = null;
+    async function autoSyncToCloud() {
+      if (!currentUser) return;
+      if (autoSyncTimer) clearTimeout(autoSyncTimer);
+      autoSyncTimer = setTimeout(async () => {
+        try {
+          await saveRemoteSettings(currentSettings);
+          setStatus('已自动同步');
+          setTimeout(() => setStatus(''), 2000);
+        } catch (err) {
+          setStatus(`自动同步失败：${err.message}`);
+        }
+      }, 800);
+    }
+
     async function handleSession(user) {
       currentUser = user || null;
       updateAuthUI(currentUser);
@@ -1146,6 +1212,7 @@
       currentSettings.dailyOverrides[selectedDate] = { workStart: ws, workEnd: we };
 
       saveLocalCache(currentSettings);
+      autoSyncToCloud();
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
@@ -1162,6 +1229,7 @@
       }
 
       saveLocalCache(currentSettings);
+      autoSyncToCloud();
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
@@ -1182,6 +1250,7 @@
       }
 
       saveLocalCache(currentSettings);
+      autoSyncToCloud();
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
@@ -1197,6 +1266,7 @@
       fillForm(currentSettings);
       renderDatePicker(currentSettings);
       saveLocalCache(currentSettings);
+      autoSyncToCloud();
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
       restartSecondTimer();
