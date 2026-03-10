@@ -93,6 +93,12 @@
     .actions, .auth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button { padding: 12px 14px; cursor: pointer; font-weight: 700; }
     button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(15,23,42,0.08); }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
     .primary { background: #111827; color: #fff; border-color: #111827; }
     .secondary { background: rgba(255,255,255,0.96); }
     .main { display: grid; gap: 20px; }
@@ -206,47 +212,116 @@
     .chart-top { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 18px; }
     .chart-title { margin: 0; font-size: 20px; font-weight: 800; }
     .chart-sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
-    .workday-calendar { display: flex; flex-direction: column; gap: 4px; }
-    .workday-grid { display: grid; grid-template-columns: repeat(7, 58px); gap: 6px; }
-    .workday-header { display: grid; grid-template-columns: repeat(7, 58px); gap: 6px; margin-bottom: 8px; }
-    .workday-header span { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 0; }
-    .workday-month { font-size: 14px; font-weight: 700; margin: 12px 0 6px; color: var(--text); }
-    .workday-month:first-child { margin-top: 0; }
-    .date-cell {
-      min-height: 58px;
-      width: 58px;
-      border-radius: 16px;
+
+    .calendar-top { align-items: center; }
+
+    .month-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72));
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.92);
+      border-radius: 22px;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .month-btn { min-width: 108px; }
+
+    .month-indicator {
+      min-width: 120px;
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--line);
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .workday-calendar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .workday-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .workday-header {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .workday-header span {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 8px 0;
+      border-radius: 12px;
+      background: rgba(17,24,39,0.04);
+    }
+
+    .workday-month { display: none; }
+
+    .date-cell {
+      min-height: 72px;
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.96);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       position: relative;
-      font-size: 14px;
+      font-size: 15px;
       user-select: none;
       transition: all .18s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
-    .date-cell:hover { transform: translateY(-1px); }
+    .date-cell:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+    }
     .date-cell.active { background: #111827; color: #fff; border-color: #111827; }
     .date-cell.muted { opacity: .5; }
-    .date-cell.selected { box-shadow: 0 0 0 2px rgba(17,24,39,0.16); }
+    .date-cell.selected { box-shadow: 0 0 0 2px rgba(17,24,39,0.18), 0 12px 28px rgba(15,23,42,0.08); }
+    .date-cell.empty {
+      visibility: hidden;
+      pointer-events: none;
+    }
     .date-cell em {
       position: absolute;
-      right: 6px;
-      top: 6px;
+      right: 8px;
+      top: 8px;
       font-style: normal;
       font-size: 10px;
-      opacity: .7;
+      opacity: .72;
     }
     .date-cell strong {
       position: absolute;
-      left: 6px;
-      top: 6px;
+      left: 8px;
+      top: 8px;
       font-size: 10px;
       font-weight: 700;
-      opacity: .8;
+      opacity: .86;
     }
+
     .day-editor {
       background: rgba(255,255,255,0.72);
       border: 1px solid var(--line);
@@ -276,7 +351,19 @@
     }
     .tiny { font-size: 12px; color: #9ca3af; }
     .editor-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-    .bars { height: 200px; display: grid; grid-auto-flow: column; grid-auto-columns: 10px; align-items: end; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+    .bars {
+      height: 200px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 10px;
+      align-items: end;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
     .bars::-webkit-scrollbar { display: none; }
     .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .bar {
@@ -302,18 +389,41 @@
     }
     .hidden { display: none !important; }
     @keyframes rise { from { transform: scaleY(.2); opacity: .3; } to { transform: scaleY(1); opacity: .92; } }
+
     @media (max-width: 1080px) {
       .wrap { grid-template-columns: 1fr; }
       .sidebar { position: static; }
       .hero { grid-template-columns: 1fr; }
       .cards { grid-template-columns: repeat(2, 1fr); }
     }
+
     @media (max-width: 640px) {
       .wrap { width: min(100vw - 18px, 1180px); margin: 10px auto 20px; }
       .cards, .grid2, .grid3, .kv, .actions, .editor-actions, .auth-actions { grid-template-columns: 1fr; }
       .weekend { grid-template-columns: repeat(4, 1fr); }
       .cards { grid-template-columns: 1fr; }
       .big { font-size: 40px; }
+
+      .month-nav {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .month-btn {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .month-indicator {
+        width: 100%;
+        order: -1;
+      }
+
+      .date-cell {
+        min-height: 58px;
+        font-size: 14px;
+        border-radius: 14px;
+      }
     }
   </style>
 </head>
@@ -414,7 +524,7 @@
         <div>
           <div class="eyebrow">秒级更新</div>
           <h2 class="big" id="todayHours">00:00:00</h2>
-          
+
           <div class="kv">
             <div class="mini">
               <div class="k">今日收入</div>
@@ -473,13 +583,22 @@
       </section>
 
       <section class="panel chart-card">
-        <div class="chart-top">
+        <div class="chart-top calendar-top">
           <div>
             <h3 class="chart-title">实际上班日选择</h3>
-            <p class="chart-sub">点击日期切换是否上班，再点一次日期可在下方编辑这一天的上下班时间。</p>
+            <p class="chart-sub">点击日期选中；再次点击已选中的日期，可切换是否上班。长周期按月份分页浏览，不再拉长页面。</p>
+          </div>
+
+          <div class="month-nav">
+            <button class="secondary month-btn" id="prevMonthBtn">← 上个月</button>
+            <div class="month-indicator" id="monthIndicator">--</div>
+            <button class="secondary month-btn" id="nextMonthBtn">下个月 →</button>
           </div>
         </div>
-        <div class="workday-calendar" id="datePickerGrid"></div>
+
+        <div class="workday-calendar month-card">
+          <div id="datePickerGrid"></div>
+        </div>
       </section>
 
       <section class="panel chart-card">
@@ -532,7 +651,7 @@
         </div>
       </section>
 
-      <div class="footer-note">Shimu v1.0.2</div>
+      <div class="footer-note">Shimu v1.0.3</div>
     </main>
   </div>
 
@@ -612,6 +731,9 @@
       saveBtn: document.getElementById('saveBtn'),
       resetBtn: document.getElementById('resetBtn'),
       datePickerGrid: document.getElementById('datePickerGrid'),
+      prevMonthBtn: document.getElementById('prevMonthBtn'),
+      nextMonthBtn: document.getElementById('nextMonthBtn'),
+      monthIndicator: document.getElementById('monthIndicator'),
       todayHours: document.getElementById('todayHours'),
       todayMoney: document.getElementById('todayMoney'),
       todayProgress: document.getElementById('todayProgress'),
@@ -638,6 +760,7 @@
     let currentSettings = loadLocalCache();
     let secondTimer = null;
     let currentUser = null;
+    let visibleMonthIndex = 0;
 
     function setStatus(text) {
       el.authStatus.textContent = text || '';
@@ -735,6 +858,50 @@
         cur.setDate(cur.getDate() + 1);
       }
       return arr;
+    }
+
+    function getMonthKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getMonthLabelByKey(key) {
+      const [y, m] = key.split('-');
+      return `${y}年${Number(m)}月`;
+    }
+
+    function getMonthListInRange(startStr, endStr) {
+      const start = new Date(startStr + 'T00:00:00');
+      const end = new Date(endStr + 'T00:00:00');
+      if (start > end) return [];
+
+      const result = [];
+      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+
+      while (cur <= endMonth) {
+        result.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`);
+        cur.setMonth(cur.getMonth() + 1);
+      }
+      return result;
+    }
+
+    function clampVisibleMonth(cfg) {
+      const months = getMonthListInRange(cfg.periodStart, cfg.periodEnd);
+      if (!months.length) {
+        visibleMonthIndex = 0;
+        return months;
+      }
+
+      if (visibleMonthIndex < 0) visibleMonthIndex = 0;
+      if (visibleMonthIndex >= months.length) visibleMonthIndex = months.length - 1;
+
+      if (selectedDate) {
+        const selectedMonth = selectedDate.slice(0, 7);
+        const idx = months.indexOf(selectedMonth);
+        if (idx !== -1) visibleMonthIndex = idx;
+      }
+
+      return months;
     }
 
     function getScheduleForDate(dateKey, cfg) {
@@ -841,62 +1008,64 @@
 
     function renderDatePicker(cfg) {
       el.datePickerGrid.innerHTML = '';
-      const range = getDateRange(cfg.periodStart, cfg.periodEnd);
-      if (range.length === 0) return;
+
+      const months = clampVisibleMonth(cfg);
+      if (!months.length) {
+        el.monthIndicator.textContent = '--';
+        el.prevMonthBtn.disabled = true;
+        el.nextMonthBtn.disabled = true;
+        return;
+      }
+
+      const monthKey = months[visibleMonthIndex];
+      const [year, month] = monthKey.split('-').map(Number);
+
+      el.monthIndicator.textContent = getMonthLabelByKey(monthKey);
+      el.prevMonthBtn.disabled = visibleMonthIndex === 0;
+      el.nextMonthBtn.disabled = visibleMonthIndex === months.length - 1;
 
       const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-      let currentMonth = -1;
-      let gridContainer = null;
 
-      range.forEach(date => {
-        const month = date.getFullYear() * 12 + date.getMonth();
+      const header = document.createElement('div');
+      header.className = 'workday-header';
+      weekdays.forEach(w => {
+        const span = document.createElement('span');
+        span.textContent = '周' + w;
+        header.appendChild(span);
+      });
+      el.datePickerGrid.appendChild(header);
 
-        // 新月份
-        if (month !== currentMonth) {
-          currentMonth = month;
+      const gridContainer = document.createElement('div');
+      gridContainer.className = 'workday-grid';
+      el.datePickerGrid.appendChild(gridContainer);
 
-          // 月份标题
-          const monthTitle = document.createElement('div');
-          monthTitle.className = 'workday-month';
-          monthTitle.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-          el.datePickerGrid.appendChild(monthTitle);
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
 
-          // 星期标题
-          const header = document.createElement('div');
-          header.className = 'workday-header';
-          weekdays.forEach(w => {
-            const span = document.createElement('span');
-            span.textContent = '周' + w;
-            header.appendChild(span);
-          });
-          el.datePickerGrid.appendChild(header);
+      for (let i = 0; i < startWeekday; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'date-cell empty';
+        gridContainer.appendChild(empty);
+      }
 
-          // 日期网格
-          gridContainer = document.createElement('div');
-          gridContainer.className = 'workday-grid';
-          el.datePickerGrid.appendChild(gridContainer);
-
-          // 填充月初空白
-          const firstDay = date.getDay();
-          for (let i = 0; i < firstDay; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'date-cell';
-            empty.style.visibility = 'hidden';
-            gridContainer.appendChild(empty);
-          }
-        }
-
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const date = new Date(year, month - 1, dayNum);
         const key = toDateString(date);
+
+        if (key < cfg.periodStart || key > cfg.periodEnd) continue;
+
         const active = (cfg.activeDates || []).includes(key);
         const off = isOffDay(date, cfg);
         const hasOverride = !!cfg.dailyOverrides?.[key];
-        const cell = document.createElement('div');
 
+        const cell = document.createElement('div');
         cell.className = `date-cell${active ? ' active' : ''}${off ? ' muted' : ''}${selectedDate === key ? ' selected' : ''}`;
-        cell.innerHTML = `${hasOverride ? '<strong>自</strong>' : ''}<span>${date.getDate()}</span>${off ? '<em>休</em>' : ''}`;
+        cell.innerHTML = `${hasOverride ? '<strong>自</strong>' : ''}<span>${dayNum}</span>${off ? '<em>休</em>' : ''}`;
         cell.title = key;
 
-        cell.addEventListener('click', async () => {
+        cell.addEventListener('click', () => {
           if (selectedDate === key) {
             const set = new Set(currentSettings.activeDates || []);
             if (set.has(key)) set.delete(key);
@@ -913,7 +1082,7 @@
         });
 
         gridContainer.appendChild(cell);
-      });
+      }
     }
 
     function getPeriodStats(now, cfg) {
@@ -1020,9 +1189,10 @@
 
     function renderLiveView(cfg) {
       const now = new Date();
+      const liveTodayStr = toDateString(now);
       const todayHours = workedMinutesAt(now, cfg) / 60;
       const todayMoney = todayHours * cfg.rate;
-      const todaySchedule = getScheduleForDate(todayStr, cfg);
+      const todaySchedule = getScheduleForDate(liveTodayStr, cfg);
       const todayStandard = calcHoursBySchedule(
         todaySchedule.workStart,
         todaySchedule.workEnd,
@@ -1130,6 +1300,7 @@
       if (!currentUser) {
         currentSettings = loadLocalCache();
         fillForm(currentSettings);
+        clampVisibleMonth(currentSettings);
         renderDatePicker(currentSettings);
         renderStaticView(currentSettings);
         renderLiveView(currentSettings);
@@ -1159,6 +1330,7 @@
       }
 
       fillForm(currentSettings);
+      clampVisibleMonth(currentSettings);
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
@@ -1249,6 +1421,8 @@
         selectedDate = null;
       }
 
+      clampVisibleMonth(currentSettings);
+
       saveLocalCache(currentSettings);
       autoSyncToCloud();
       renderDatePicker(currentSettings);
@@ -1263,7 +1437,9 @@
     el.resetBtn.addEventListener('click', async () => {
       currentSettings = JSON.parse(JSON.stringify(DEFAULTS));
       selectedDate = null;
+      visibleMonthIndex = 0;
       fillForm(currentSettings);
+      clampVisibleMonth(currentSettings);
       renderDatePicker(currentSettings);
       saveLocalCache(currentSettings);
       autoSyncToCloud();
@@ -1277,8 +1453,23 @@
     el.logoutBtn.addEventListener('click', logout);
     el.syncBtn.addEventListener('click', syncToCloud);
 
+    el.prevMonthBtn.addEventListener('click', () => {
+      const months = getMonthListInRange(currentSettings.periodStart, currentSettings.periodEnd);
+      if (!months.length) return;
+      visibleMonthIndex = Math.max(0, visibleMonthIndex - 1);
+      renderDatePicker(currentSettings);
+    });
+
+    el.nextMonthBtn.addEventListener('click', () => {
+      const months = getMonthListInRange(currentSettings.periodStart, currentSettings.periodEnd);
+      if (!months.length) return;
+      visibleMonthIndex = Math.min(months.length - 1, visibleMonthIndex + 1);
+      renderDatePicker(currentSettings);
+    });
+
     async function init() {
       fillForm(currentSettings);
+      clampVisibleMonth(currentSettings);
       renderDatePicker(currentSettings);
       renderStaticView(currentSettings);
       renderLiveView(currentSettings);
